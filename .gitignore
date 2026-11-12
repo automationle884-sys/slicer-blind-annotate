@@ -1,0 +1,5 @@
+examples/demo_data/
+tests/result.txt
+__pycache__/
+*.pyc
+.DS_Store

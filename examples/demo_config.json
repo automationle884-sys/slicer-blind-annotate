@@ -1,0 +1,37 @@
+{
+  "cases_root": "demo_data",
+  "output": "annotations/{annotator}",
+  "reannotate_every": 2,
+  "tasks": {
+    "landmarks": {
+      "title": "CT <-> MR landmarks",
+      "instructions": "Left: CT, right: MR. Place each named landmark on both sides; after each point the tool switches to the other side. Skip what you cannot see.",
+      "min_pairs": 3,
+      "left":  {"title": "CT", "image": "ct.nii.gz", "window": [400, 60], "start_at_mask": "organ_mask.nii.gz",
+                "points": ["vessel entry", "vessel exit", "lesion centre", "organ tip"]},
+      "right": {"title": "MR", "image": "mr.nii.gz",
+                "points": ["vessel entry", "vessel exit", "lesion centre", "organ tip"]}
+    },
+    "projection": {
+      "title": "MR <-> 2D projection",
+      "instructions": "Left: MR, right: arterial-phase composite of the frame sequence. Use the panel button to step through all frames.",
+      "min_pairs": 2,
+      "left":  {"title": "MR", "image": "mr.nii.gz", "points": ["branch point", "vessel end"]},
+      "right": {"title": "X-ray", "points": ["branch point", "vessel end"],
+                "projection": {"file": "frames.npz", "key": "frames", "composite": "min",
+                               "frames": {"file": "frames.json", "key": "arterial"},
+                               "pixel_spacing": {"file": "frames.json", "key": "pixel_mm"},
+                               "frame_rate": {"file": "frames.json", "key": "fps"}}}
+    },
+    "outline": {
+      "title": "Lesion segmentation and 2D outlines",
+      "instructions": "Left: segment the lesion with the Segment Editor. Right: draw the late-phase blush (closed curve) and the organ margin (open curve).",
+      "left":  {"title": "MR", "image": "mr.nii.gz", "segments": ["lesion"]},
+      "right": {"title": "X-ray late",
+                "projection": {"file": "frames.npz", "composite": "mean", "frames": {"file": "frames.json", "key": "late"},
+                               "pixel_spacing": {"file": "frames.json", "key": "pixel_mm"}},
+                "curves": [{"key": "blush", "title": "blush", "closed": true},
+                           {"key": "margin", "title": "organ margin", "closed": false}]}
+    }
+  }
+}

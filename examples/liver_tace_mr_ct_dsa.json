@@ -1,0 +1,51 @@
+{
+  "_comment": "Configuration used in our liver TACE MR/CT/DSA registration study. Each case folder holds ct/ven.nii.gz, mr/{ven,art}.nii.gz, dsa/run.npz (frames), dsa/meta.json (pixel_mm) and dsa/decomp.npz (windows = [t0, arterial start, arterial end, late start, n_frames]).",
+  "cases_root": "reg",
+  "output": "annot/{annotator}",
+  "reannotate_every": 5,
+  "tasks": {
+    "ctmr": {
+      "title": "CT <-> MR landmarks",
+      "instructions": "Left: CT venous phase, right: MR venous phase. Place 5-10 landmark pairs; skip structures you cannot identify.",
+      "min_pairs": 5,
+      "left":  {"title": "CT", "image": "ct/ven.nii.gz", "window": [400, 60], "start_at_mask": "seg/ct_total/liver.nii.gz",
+                "points": ["portal vein bifurcation", "right portal vein: anterior/posterior split", "umbilical portion of left portal vein",
+                           "right hepatic vein into IVC", "middle hepatic vein into IVC", "left hepatic vein into IVC"]},
+      "right": {"title": "MR", "image": "mr/ven.nii.gz",
+                "points": ["portal vein bifurcation", "right portal vein: anterior/posterior split", "umbilical portion of left portal vein",
+                           "right hepatic vein into IVC", "middle hepatic vein into IVC", "left hepatic vein into IVC"]}
+    },
+    "dsa": {
+      "title": "MR <-> DSA arterial branch points",
+      "instructions": "Left: MR arterial phase, right: DSA (darkest value over the arterial window). Place at least 3 pairs.",
+      "min_pairs": 3,
+      "left":  {"title": "MR", "image": "mr/art.nii.gz",
+                "points": ["GDA origin", "proper hepatic artery bifurcation", "right hepatic artery: anterior/posterior split",
+                           "first branch of left hepatic artery", "celiac trunk bifurcation"]},
+      "right": {"title": "DSA",
+                "points": ["GDA origin", "proper hepatic artery bifurcation", "right hepatic artery: anterior/posterior split",
+                           "first branch of left hepatic artery", "celiac trunk bifurcation"],
+                "projection": {"file": "dsa/run.npz", "key": "frames", "composite": "min",
+                               "frames": {"file": "dsa/decomp.npz", "key": "windows", "index": [1, 2]},
+                               "pixel_spacing": {"file": "dsa/meta.json", "key": "pixel_mm"}}}
+    },
+    "contour": {
+      "title": "Tumour on MR, blush and liver margin on DSA",
+      "instructions": "Left: segment the 1-3 largest tumours. Right: draw every visible tumour blush (closed) and the liver margin (open).",
+      "left":  {"title": "MR", "image": "mr/art.nii.gz", "segments": ["tumor1", "tumor2", "tumor3"]},
+      "right": {"title": "DSA late",
+                "projection": {"file": "dsa/run.npz", "key": "frames", "composite": "mean",
+                               "frames": {"file": "dsa/decomp.npz", "key": "windows", "index": [3, 4]},
+                               "pixel_spacing": {"file": "dsa/meta.json", "key": "pixel_mm"}},
+                "curves": [{"key": "blush", "title": "tumour blush", "closed": true},
+                           {"key": "liver_margin", "title": "liver margin", "closed": false}]}
+    },
+    "artery": {
+      "title": "Hepatic artery on MR",
+      "instructions": "Segment the coeliac trunk, common/proper hepatic and left/right hepatic arteries with visible segmental branches; splenic artery and GDA only for the first 3 cm. Arteries are bright in the arterial phase (left) and dark in the venous phase (right); the portal vein is the opposite.",
+      "link_views": true,
+      "left":  {"title": "MR arterial", "image": "mr/art.nii.gz", "segments": ["hepatic_artery"]},
+      "right": {"title": "MR venous", "image": "mr/ven.nii.gz"}
+    }
+  }
+}
